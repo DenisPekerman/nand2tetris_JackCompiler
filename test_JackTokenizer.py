@@ -16,10 +16,93 @@ class TestJackTokenizer(unittest.TestCase):
         self.assertEqual(token, '5')
 
 
+    def test_symbolDict(self):
+        self.jackTokenizer.tokens = ['>', '=', 'x']
+
+        result = self.jackTokenizer.advance()
+        value = self.jackTokenizer.getSymbolValue(result)
+        self.assertEqual('gt', value)
+
+        result = self.jackTokenizer.advance()
+        value = self.jackTokenizer.getSymbolValue(result)
+        self.assertEqual('eq', value)
+
+        result = self.jackTokenizer.advance()
+        value = self.jackTokenizer.getSymbolValue(result)
+        self.assertEqual(None, value)
+
+    def test_unaryOp_simple(self):
+        self.jackTokenizer.tokens = ['=', '~', 'x', '-', '-', '5']
+        expected = [
+            ('=', 'symbol'),
+            ('~', 'unaryOp'),
+            ('x', 'identifier'),
+            ('-', 'symbol'),
+            ('-', 'unaryOp'),
+            ('5', 'integerConstant'),
+        ]
+
+        for expected_token, expected_type in expected:
+            token = self.jackTokenizer.advance()
+            token_type = self.jackTokenizer.getTokenType(token)
+            self.assertEqual(token, expected_token)
+            self.assertEqual(token_type, expected_type)
+
+
+    
+    def test_unaryComplex_1(self):
+        self.jackTokenizer.tokens = ['(', '-', 'x', '+', '~', 'y', ')', '-', '5']
+        expected = [
+            ('(', 'symbol'),
+            ('-', 'unaryOp'),
+            ('x', 'identifier'),
+            ('+', 'symbol'),
+            ('~', 'unaryOp'),
+            ('y', 'identifier'),
+            (')', 'symbol'),
+            ('-', 'symbol'),
+            ('5', 'integerConstant'),
+        ]
+
+        for expected_token, expected_type in expected:
+            token = self.jackTokenizer.advance()
+            token_type = self.jackTokenizer.getTokenType(token)
+            self.assertEqual(token, expected_token)
+            self.assertEqual(token_type, expected_type)
+            
+    
+    def test_unaryComplex_2(self):
+        self.jackTokenizer.tokens = ['x', '=', '~', 'arr', '[', 'i', ']', '-', '(', '-', 'y', ')']
+        expected = [
+            ('x', 'identifier'),
+            ('=', 'symbol'),
+            ('~', 'unaryOp'),
+            ('arr', 'identifier'),
+            ('[', 'symbol'),
+            ('i', 'identifier'),
+            (']', 'symbol'),
+            ('-', 'symbol'),
+            ('(', 'symbol'),
+            ('-', 'unaryOp'),
+            ('y', 'identifier'),
+            (')', 'symbol'),
+        ]
+
+        for expected_token, expected_type in expected:
+            token = self.jackTokenizer.advance()
+            token_type = self.jackTokenizer.getTokenType(token)
+            self.assertEqual(token, expected_token)
+            self.assertEqual(token_type, expected_type)
+
+
+
+
+
+
     def test_getTokenValue(self):
-            token = "class"
-            result = self.jackTokenizer.getTokenValue(token)
-            self.assertEqual(result, ("class"))
+        token = "class"
+        result = self.jackTokenizer.getTokenValue(token)
+        self.assertEqual(result, ("class"))
 
 
     def test_gettokenType_keyword(self):

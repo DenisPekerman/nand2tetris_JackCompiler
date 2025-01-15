@@ -137,8 +137,9 @@ class CompilationEngine:
             self.tokenizer.advance() # consume '['
             arr_index = self.tokenizer.advance() # get index
             self.tokenizer.advance() # consume ']'
-            
+
         self.tokenizer.advance() # consume '='
 
         if self.tokenizer.peek() == '(':
+            pass
         
