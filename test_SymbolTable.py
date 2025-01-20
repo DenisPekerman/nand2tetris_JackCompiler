@@ -10,13 +10,13 @@ class TestSymbolTable(unittest.TestCase):
    def test_define(self):
       self.symbolTable.define("x", "int", "static")
       self.symbolTable.define("y", "int", "static")
-      self.symbolTable.define("u", "boolean", "field")
+      self.symbolTable.define("u", "boolean", "static")
 
       self.assertEqual(self.symbolTable.scope,
           {
               "x": {"type": "int", "kind": "static", "index": 0},
               "y": {"type": "int", "kind": "static", "index": 1},
-              "u": {"type": "boolean", "kind": "field", "index": 0},
+              "u": {"type": "boolean", "kind": "static", "index": 2},
           }
       )  
 
@@ -26,7 +26,8 @@ class TestSymbolTable(unittest.TestCase):
       self.symbolTable.reset()
 
       self.assertEqual(self.symbolTable.scope, {})
-      self.assertEqual(self.symbolTable.count, { "static: 0", "field: 0", "argument: 0", "local: 0"})
+      self.assertEqual(self.symbolTable.count, { "static": 0, "field": 0, "argument": 0, "local": 0 })
+
 
 
    def test_varCount(self):

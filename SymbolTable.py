@@ -6,16 +6,21 @@ class SymbolTable:
 
     def reset(self):
         self.scope = {}
-        self.count = {"static: 0", "field: 0", "argument: 0", "local: 0"}
+        self.count = {"static": 0, "field": 0, "argument": 0, "local": 0}
 
+
+    def has(self, name):
+        return name in self.scope
 
     def define(self, name, type, kind):
-        self.scope[name] = {
-            'type': type,
-            'kind': kind,
-            'index': self.count[kind]
-        }
-        self.count[kind] += 1
+        if kind in self.count:  
+            self.scope[name] = {
+                'type': type,
+                'kind': kind,
+                'index': self.count[kind]
+            }
+            self.count[kind] += 1  
+
 
 
     def var_count(self, kind):
@@ -38,3 +43,4 @@ class SymbolTable:
         if name in self.scope:
             return self.scope[name]['index']
         return None
+        

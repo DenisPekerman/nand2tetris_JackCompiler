@@ -5,3 +5,7 @@ __pycache__/test_CompilationEngine.cpython-313.pyc
 __pycache__/test_JackTokenizer.cpython-313.pyc
 __pycache__/test_SymbolTable.cpython-313.pyc
 __pycache__/VmWriter.cpython-313.pyc
+
+__pycache__/
+*.pyc
+

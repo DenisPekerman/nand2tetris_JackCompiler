@@ -1,6 +1,6 @@
 
 
-class VMWriter:
+class VmWriter:
     
     def __init__(self, output_file):
         self.output_file = open(output_file, 'w')        

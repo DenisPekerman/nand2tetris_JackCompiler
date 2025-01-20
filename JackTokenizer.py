@@ -6,26 +6,29 @@ class JackTokenizer:
 
     KeywordsCodes = ["class", "constructor", "function", "method", "field", "static", "var", "int", "char", "boolean", "void", "true", "false", "null", "this", "let", "do", "if", "else", "while", "return"]
     
-    SymbolsCodes = ['{', '}', '(', ')', '[', ']', '.', ',', ';', '+', '-', '*', '/', '&', 
-                    '<', '>', '=', '~']
+    SymbolsCodes = ['{', '}', '(', ')', '[', ']', '.', ',', ';']
+
+    opSymbols = ['+', '-', '*', '/', '&', '<', '>', '=', '~', '|']
 
     #  negation is handled in getTokenType()
-    symbolDict = { '+': 'add', '-': 'sub', '*': 'mult', '/': 'div', '&': 'and', 
+    opSymbolDict = { '+': 'add', '-': 'sub', '*': 'call Math.multiply 2', '/': 'call Math.divide 2', '&': 'and', 
                    '<': 'lt', '>': 'gt', '=': 'eq', '~': 'not' }
 
 
+    opSymbol_pattern = '[' + re.escape(''.join(opSymbols)) + ']'
     keyword_Pattern = '(?!\w)|'.join(KeywordsCodes) + '(?!\w)'
     symbol_pattern = '[' + re.escape('|'.join(SymbolsCodes)) + ']'
     int_pattern = r'\d+'
     str_pattern = r'"[^"\n]*"'
     identifier_pattern = r'[a-zA-Z_]\w*'
-    token = re.compile(keyword_Pattern + '|' + symbol_pattern + '|' + int_pattern + '|' + str_pattern + '|' + identifier_pattern)
+    token = re.compile(keyword_Pattern + '|' + symbol_pattern + '|' + int_pattern + '|' + str_pattern + '|' + identifier_pattern + '|' + opSymbol_pattern)
 
     
 
     def __init__(self, input_file: str):
         self.currentToken = ""
         self.prevToken = ""
+        self.prevTokenType = ""
         self.data = ''
         if input_file:
             self.input_file = open(input_file, "r")
@@ -51,21 +54,24 @@ class JackTokenizer:
         return tokenValue
 
 
-    def _UnaryOrSymbol(self, tokenValue):
+    def _UnaryOrOperator(self, tokenValue):
         if tokenValue == '~':
             return 'unaryOp'
         elif tokenValue == '-':
-            if self.prevTokenType in ['symbol', 'keyword'] and self.prevToken not in [')', ']']:
+            if self.prevTokenType in ['symbol', 'keyword', 'opSymbol'] and self.prevToken not in [')', ']']:
                 return 'unaryOp'
-        return 'symbol'
-    
-                        
-    def getTokenType(self, tokenValue):
-        if re.match(self.symbol_pattern, tokenValue) is not None:  # matches unaryOp as well
-            if tokenValue in ['-', '~']:
-                return self._UnaryOrSymbol(tokenValue)
             else:
-                return 'symbol'
+                return 'opSymbol'
+        
+    
+    def getTokenType(self, tokenValue):
+        if re.match(self.opSymbol_pattern, tokenValue) is not None:
+            if tokenValue in ['-', '~']:
+                return self._UnaryOrOperator(tokenValue)
+            else:
+                return 'opSymbol'
+        elif re.match(self.symbol_pattern, tokenValue) is not None:
+            return 'symbol'
         elif re.match(self.keyword_Pattern, tokenValue) is not None:
             return "keyword"
         elif re.match(self.int_pattern, tokenValue) is not None:
@@ -78,7 +84,7 @@ class JackTokenizer:
 
 
     def getSymbolValue(self, token):
-        return self.symbolDict.get(token)
+        return self.opSymbolDict.get(token)
 
 
     def hasMoreTokens(self):

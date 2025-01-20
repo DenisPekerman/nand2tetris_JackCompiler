@@ -31,15 +31,32 @@ class TestJackTokenizer(unittest.TestCase):
         value = self.jackTokenizer.getSymbolValue(result)
         self.assertEqual(None, value)
 
-    def test_unaryOp_simple(self):
-        self.jackTokenizer.tokens = ['=', '~', 'x', '-', '-', '5']
+    def test_unaryOp_simple_1(self):
+        self.jackTokenizer.tokens = ['=','-', '5']
         expected = [
-            ('=', 'symbol'),
-            ('~', 'unaryOp'),
-            ('x', 'identifier'),
-            ('-', 'symbol'),
+            ('=', 'opSymbol'),
             ('-', 'unaryOp'),
             ('5', 'integerConstant'),
+        ]
+
+        for expected_token, expected_type in expected:
+            token = self.jackTokenizer.advance()
+            token_type = self.jackTokenizer.getTokenType(token)
+            self.assertEqual(token, expected_token)
+            self.assertEqual(token_type, expected_type)
+
+
+    def test_unaryOp_simple_2(self):
+        self.jackTokenizer.tokens = ['=', '~', 'x', '-', '(', '-', '5', ')']
+        expected = [
+            ('=', 'opSymbol'),
+            ('~', 'unaryOp'),
+            ('x', 'identifier'),
+            ('-', 'opSymbol'),
+            ('(', 'symbol'),
+            ('-', 'unaryOp'),
+            ('5', 'integerConstant'),
+            (')', 'symbol'),
         ]
 
         for expected_token, expected_type in expected:
@@ -56,11 +73,11 @@ class TestJackTokenizer(unittest.TestCase):
             ('(', 'symbol'),
             ('-', 'unaryOp'),
             ('x', 'identifier'),
-            ('+', 'symbol'),
+            ('+', 'opSymbol'),
             ('~', 'unaryOp'),
             ('y', 'identifier'),
             (')', 'symbol'),
-            ('-', 'symbol'),
+            ('-', 'opSymbol'),
             ('5', 'integerConstant'),
         ]
 
@@ -75,13 +92,13 @@ class TestJackTokenizer(unittest.TestCase):
         self.jackTokenizer.tokens = ['x', '=', '~', 'arr', '[', 'i', ']', '-', '(', '-', 'y', ')']
         expected = [
             ('x', 'identifier'),
-            ('=', 'symbol'),
+            ('=', 'opSymbol'),
             ('~', 'unaryOp'),
             ('arr', 'identifier'),
             ('[', 'symbol'),
             ('i', 'identifier'),
             (']', 'symbol'),
-            ('-', 'symbol'),
+            ('-', 'opSymbol'),
             ('(', 'symbol'),
             ('-', 'unaryOp'),
             ('y', 'identifier'),
@@ -120,7 +137,7 @@ class TestJackTokenizer(unittest.TestCase):
     def test_gettokenType_symbol(self):
         token = "="
         result = self.jackTokenizer.getTokenType(token)
-        self.assertEqual(result, "symbol")
+        self.assertEqual(result, "opSymbol")
 
 
     def test_gettokenType_string(self):
