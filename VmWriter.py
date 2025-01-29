@@ -8,6 +8,7 @@ class VmWriter:
 
     def _writeToFile(self, input):
         self.output_file.write(input + '\n')
+        self.output_file.flush()
 
 
     def writePush(self, segment, index):
@@ -48,4 +49,4 @@ class VmWriter:
 
     def close(self):
         self.output_file.close()
-        pass
+        

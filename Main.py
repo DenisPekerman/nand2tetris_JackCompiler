@@ -3,11 +3,11 @@ import os
 import sys
 from CompilationEngine import CompilationEngine
 
-class JackAnalyzer:
+class Main:
     
     def __init__(self, input_file_or_folder):
         self.input_file_or_folder = input_file_or_folder
-        self.output_file = JackAnalyzer.getOutputPath(input_file_or_folder)
+        self.output_file = Main.getOutputPath(input_file_or_folder)
 
 
     @staticmethod
@@ -24,15 +24,14 @@ class JackAnalyzer:
 
         else: 
             files = os.listdir(input_file_or_folder) 
-            files = [file for file in files if file.endswith('.jack')]
-            files = [os.path.join(input_file_or_folder, file ) for file in files]
+            files = [os.path.join(input_file_or_folder, file) for file in files if file.endswith('.jack')]
             return files
     
 
     def run(self):
-        for file in JackAnalyzer.getAllJackFiles(self.input_file_or_folder):
+        for file in Main.getAllJackFiles(self.input_file_or_folder):
             print(file)
-            compileEngine = CompilationEngine(file, JackAnalyzer.getOutputPath(file))
+            compileEngine = CompilationEngine(file, Main.getOutputPath(file))
             compileEngine.compileClass()
 
 
@@ -40,7 +39,7 @@ class JackAnalyzer:
 if __name__ == "__main__":
 
     input = sys.argv[1]
-    main = JackAnalyzer(input)
+    main = Main(input)
     main.run()
     
     

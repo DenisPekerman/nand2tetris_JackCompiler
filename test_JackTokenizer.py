@@ -16,21 +16,6 @@ class TestJackTokenizer(unittest.TestCase):
         self.assertEqual(token, '5')
 
 
-    def test_symbolDict(self):
-        self.jackTokenizer.tokens = ['>', '=', 'x']
-
-        result = self.jackTokenizer.advance()
-        value = self.jackTokenizer.getSymbolValue(result)
-        self.assertEqual('gt', value)
-
-        result = self.jackTokenizer.advance()
-        value = self.jackTokenizer.getSymbolValue(result)
-        self.assertEqual('eq', value)
-
-        result = self.jackTokenizer.advance()
-        value = self.jackTokenizer.getSymbolValue(result)
-        self.assertEqual(None, value)
-
     def test_unaryOp_simple_1(self):
         self.jackTokenizer.tokens = ['=','-', '5']
         expected = [
@@ -64,7 +49,6 @@ class TestJackTokenizer(unittest.TestCase):
             token_type = self.jackTokenizer.getTokenType(token)
             self.assertEqual(token, expected_token)
             self.assertEqual(token_type, expected_type)
-
 
     
     def test_unaryComplex_1(self):
@@ -110,10 +94,6 @@ class TestJackTokenizer(unittest.TestCase):
             token_type = self.jackTokenizer.getTokenType(token)
             self.assertEqual(token, expected_token)
             self.assertEqual(token_type, expected_type)
-
-
-
-
 
 
     def test_getTokenValue(self):

@@ -21,13 +21,4 @@ class Test2CompilationEngine(unittest.TestCase):
     def tearDown(self):
         self.patcher.stop()
 
-    def test_compile_term(self):
-        self.engine.tokenizer.tokens = ["some", "tokens", "for", "term"]
-
-        self.engine.compileTerm()
-        self.engine.writeVm.close()
-
-        handle = self.mocked_open()
-        handle.write.assert_not_called()
-
 

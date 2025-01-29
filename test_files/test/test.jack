@@ -1,0 +1,8 @@
+class Main {
+
+   function void main() {
+      do Main.fillMemory(8001, 6, -1);
+      return;
+   }
+
+}

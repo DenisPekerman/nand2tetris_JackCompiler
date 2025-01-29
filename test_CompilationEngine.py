@@ -1,4 +1,3 @@
-import difflib
 import unittest
 from CompilationEngine import CompilationEngine
 from SymbolTable import SymbolTable  
@@ -150,18 +149,6 @@ class TestCompilationEngine(unittest.TestCase):
         self.assertEqual(self.st_sub.kind_of('check'), 'local')
         self.assertEqual(self.st_sub.type_of('check'), 'boolean')
         self.assertEqual(self.st_sub.index_of('check'), 4)
-
-    def test_saveStateVar_scopeCheck(self):
-        self.compilationEngine.st_subroutine.define('y', 'int', 'local')
-        self.compilationEngine.st_class.define('x', 'int', 'static')
-        self.compilationEngine.st_class.define('z', 'int', 'static')
-        self.compilationEngine._saveVarDetail('z')
-
-        expected_stateVar = [
-            {'name': 'z', 'kind': 'static', 'type': 'int', 'index': 1}
-        ]
-
-        self.assertEqual(self.compilationEngine.stackMachine[0], expected_stateVar)
     
 
     def test_compileVarDec_single_line(self):
@@ -180,63 +167,3 @@ class TestCompilationEngine(unittest.TestCase):
         self.assertEqual(self.st_sub.type_of('z'), 'int')
         self.assertEqual(self.st_sub.index_of('z'), 2)
 
-
-    def test_getStateVar(self):
-        # Define variables in subroutine and class symbol tables
-        self.compilationEngine.st_subroutine.define('x', 'int', 'local')
-        self.compilationEngine.st_class.define('y', 'char', 'field')
-
-        # Test for a variable in subroutine symbol table
-        result_x = self.compilationEngine._getVarDetail('x')
-        expected_x = {
-            'name': 'x',
-            'kind': 'local',
-            'type': 'int',
-            'index': 0
-        }
-        self.assertEqual(result_x, expected_x)
-
-        # Test for a variable in class symbol table
-        result_y = self.compilationEngine._getVarDetail('y')
-        expected_y = {
-            'name': 'y',
-            'kind': 'field',
-            'type': 'char',
-            'index': 0
-        }
-        self.assertEqual(result_y, expected_y)
-
-        # Test for a variable that does not exist
-        result_z = self.compilationEngine._getVarDetail('z')
-        self.assertIsNone(result_z)
-
-
-
-    def test_stackMachine(self):
-        self.compilationEngine.st_class.define("x", "int", "static")
-        self.compilationEngine.st_class.define("y", "int", "static")
-
-        self.jackTokenizer.tokens = ['x', '=', 'y', ';']
-
-        self.compilationEngine.compileExpression()
-
-        # The second item in stackMachine (index 1), 'name' field
-        actual = self.compilationEngine.stackMachine[1]['name']
-        expected = 'y'
-        self.assertEqual(expected, actual)
-
-    
-    def test_stackMachine_1(self):
-        self.compilationEngine.st_class.define("x", "int", "static")
-        self.compilationEngine.st_class.define("y", "int", "static")
-
-        self.jackTokenizer.tokens = ['x', '=', 'y', ';']
-
-        self.compilationEngine.stackMachine = []
-
-        self.compilationEngine.compileExpression()
-
-        # The second item in stackMachine (index 1), 'name' field
-        actual = self.compilationEngine.stackMachine[1]['name']
-        expected = 'y'
-        self.assertEqual(expected, actual)

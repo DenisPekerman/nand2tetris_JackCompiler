@@ -22,7 +22,6 @@ class SymbolTable:
             self.count[kind] += 1  
 
 
-
     def var_count(self, kind):
         return self.count[kind]
 

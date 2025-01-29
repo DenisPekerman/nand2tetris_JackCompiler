@@ -10,11 +10,6 @@ class JackTokenizer:
 
     opSymbols = ['+', '-', '*', '/', '&', '<', '>', '=', '~', '|']
 
-    #  negation is handled in getTokenType()
-    opSymbolDict = { '+': 'add', '-': 'sub', '*': 'call Math.multiply 2', '/': 'call Math.divide 2', '&': 'and', 
-                   '<': 'lt', '>': 'gt', '=': 'eq', '~': 'not' }
-
-
     opSymbol_pattern = '[' + re.escape(''.join(opSymbols)) + ']'
     keyword_Pattern = '(?!\w)|'.join(KeywordsCodes) + '(?!\w)'
     symbol_pattern = '[' + re.escape('|'.join(SymbolsCodes)) + ']'

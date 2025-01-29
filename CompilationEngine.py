@@ -15,27 +15,14 @@ class CompilationEngine:
         self.st_class = SymbolTable()  # St = symbol table 
         self.st_subroutine = SymbolTable()
 
-        self.writeVm = VmWriter(output_file)
+        self.writeVm = VmWriter(self.output_file)
 
         self.class_name = ''
-        self.stackMachine = [[]]
-
-    
-    def _saveVarDetail(self, token):
-        token_type = self.tokenizer.getTokenType(token)
-        name = token
-        if token_type == 'opSymbol':
-            name = self.tokenizer.getSymbolValue(token)
-            kind = 'opSymbol'
-            type = None
-            index = None
         
-        elif token_type == 'integerConstant':
-            kind = 'constant'
-            type = None
-            index = None
 
-        elif self.st_subroutine.has(token):
+    def _getVarDetail(self, token):
+        name = token
+        if self.st_subroutine.has(token):
             kind = self.st_subroutine.kind_of(token)
             type = self.st_subroutine.type_of(token)
             index = self.st_subroutine.index_of(token)
@@ -45,30 +32,46 @@ class CompilationEngine:
             type = self.st_class.type_of(token)
             index = self.st_class.index_of(token)
 
-        self.stackMachine[-1].append({
-            'name': name,
-            'kind': kind,
-            'type': type,
-            'index': index
-        })
+            var_details = {
+                'name': name,
+                'kind': kind,
+                'type': type,
+                'index': index
+            }
+        return var_details
+    
+
+    def _handleArray(self, token):
+        var_detail = self._getVarDetail(token)
+        if var_detail['kind'] == 'field':
+            self.writeVm.writePush('this', var_detail['index'])
+        else:
+            self.writeVm.writePush(var_detail['kind'], var_detail['index'])
+        self.writeVm.writeArithmetic('add')
+        self.writeVm.writePop('pointer', '1')
+        self.writeVm.writePush('that', '0')
 
 
     def _subroutineHelper(self):
-        self.tokenizer.advance() # consume 'subroutine'
+        self.tokenizer.advance()  # consume 'subroutine'
         subroutine_type = self.tokenizer.advance()
         subroutine_name = self.tokenizer.advance()
-        self.tokenizer.advance() # consume '('
+        self.tokenizer.advance()  # consume '('
 
         if self.tokenizer.peek() != ')':
-            self.compileParameterList()
-        self.tokenizer.advance() # consume ')'
-        self.tokenizer.advance() # consume '{'
-    
-        return (subroutine_type, subroutine_name)
+            nVars = self.compileParameterList()
+        else:
+            nVars = 0  
+
+        self.tokenizer.advance()  # consume ')'
+        self.tokenizer.advance()  # consume '{'
+
+        return subroutine_type, subroutine_name, nVars
+
 
 
     def compileClass(self):
-        self.st_class = {} # reset class symbolTable
+        self.st_class.reset() # reset class symbolTable
 
         while self.tokenizer.peek() != '}':
             self.tokenizer.advance() # 'class'
@@ -100,7 +103,7 @@ class CompilationEngine:
                 
 
     def compileSubroutine(self):
-        self.st_subroutine = {} # reset subroutine symbolTable 
+        self.st_subroutine.reset()# reset subroutine symbolTable 
 
         while self.tokenizer.peek() in ['constructor', 'method', 'function']:
             if self.tokenizer.peek() == 'constructor':
@@ -123,15 +126,13 @@ class CompilationEngine:
                 kind = 'argument'
                 self.st_subroutine.define(name, type, kind)
 
-                method_type, method_name = self._subroutineHelper()
+                method_type, method_name, nVars = self._subroutineHelper()
 
-                nVars = self.st_subroutine.index_of('argument')
                 self.writeVm.writeFunction(f'{self.class_name}.{method_name}', nVars)
 
             elif self.tokenizer.peek() == 'function':
-                function_type, function_name = self._subroutineHelper()
+                function_type, function_name, nVars = self._subroutineHelper()
 
-                nVars = self.st_subroutine.index_of('argument')
                 self.writeVm.writeFunction(f'{self.class_name}.{function_name}', nVars)
 
         self.compileSubroutineBody()
@@ -178,6 +179,7 @@ class CompilationEngine:
                 self.compileLet()
             elif self.tokenizer.peek() == 'do':
                 self.compileDo()
+                self.writeVm.writePop('temp', 0) # discards the dummy value
             elif self.tokenizer.peek() == 'if':
                 self.compileIf()
             elif self.tokenizer.peek() == 'while':
@@ -189,11 +191,14 @@ class CompilationEngine:
 
     def compileLet(self):
         self.tokenizer.advance() # consume 'let'
-        self.compileTerm()
+        first_term = self.tokenizer.advance()
+        var_detail = self._getVarDetail(first_term)
         self.tokenizer.advance() # consume '='
         self.compileExpression()
-        self.compileExpression() # consume ';'
-    
+        self.writeVm.writePop(var_detail['kind'], var_detail['index'])
+        self.tokenizer.advance() # consume ';'
+
+
     def compileDo(self):
         self.tokenizer.advance() # consume 'do'
         self.compileExpression()
@@ -227,60 +232,124 @@ class CompilationEngine:
 
 
     def compileReturn(self):
-        pass
+        self.tokenizer.advance() # consume 'return'
+        if self.tokenizer.peek() == ';':
+            self.writeVm.writePush('constant', 0)
+        else:
+            self.compileExpression()
+
+        self.writeVm.writeReturn()
+        self.tokenizer.advance()  # consume ';'
+
 
     def compileExpressionList(self):
-        pass
+        var_count = 0
+        while self.tokenizer.peek() != ')':
+            self.compileExpression()
+            var_count += 1
+            if self.tokenizer.peek() == ',':
+                self.tokenizer.advance() # consume ','
+            else:
+                break
+        return var_count
+    
 
     def compileExpression(self):
-        self.stackMachine.append([])
-        while self.tokenizer.peek() not in [')', ';', ']']:
-            self.compileTerm() # term left to the '='
-
-            # handles if/while condition.
-            if self.tokenizer.peek() in [ '=', '<', '>']: 
-                if self.tokenizer.peek() == '=':
-                    self.tokenizer.advance() # consume '='
-                    self.compileTerm() # term right to the '='
-                                    
-                    token = self.tokenizer.peek()
-                    token_type = self.tokenizer.getTokenType(token)
-
-                    if token_type == 'opSymbol':
-                        op = self.tokenizer.advance() # get the op
-                        self.compileTerm()  # term right to the op
-                        self._saveVarDetail(op)
-        self.stackMachine.pop()
-                        
-                    
-    # let x = y + z + 1
-    # 
-    # while (x=5)
-    
-    def compileTerm(self):
-        token = self.tokenizer.advance() # term's first token
+        self.compileTerm() 
+        token = self.tokenizer.peek()
         token_type = self.tokenizer.getTokenType(token)
 
-        if self.tokenizer.peek() == '=':
-            self._saveVarDetail(token)
+        while token_type == 'opSymbol':
+            op = self.tokenizer.advance() # get operator
+            self.compileTerm() # get next term
 
-        elif token_type == 'integerConstant':
-            self.writeVm.writePush('constant', token)
+            if op == '+':
+                self.writeVm.writeArithmetic('add')
+            elif op == '-':
+                self.writeVm.writeArithmetic('sub')
+            elif op == '*':
+                self.writeVm.writeCall('Math.multiply', 2)
+            elif op == '/':
+                self.writeVm.writeCall('Math.divide', 2)
+            elif op == '|':
+                self.writeVm.writeArithmetic('or')
+            elif op == '&':
+                self.writeVm.writeArithmetic('and')
+            elif op == '=':
+                self.writeVm.writeArithmetic('eq')
+            elif op == '<':
+                self.writeVm.writeArithmetic('lt')
+            elif op == '>':
+                self.writeVm.writeArithmetic('gt')
+            
+            token = self.tokenizer.peek()
+            token_type = self.tokenizer.getTokenType(token)
         
-        elif token == '(':
+        
+
+    def compileTerm(self):
+        token = self.tokenizer.peek() # term's first token
+        token_type = self.tokenizer.getTokenType(token)
+        
+        if token == '(':
             self.tokenizer.advance() # consume '('
             self.compileExpression()
             self.tokenizer.advance() # consume ')'
 
         elif token_type == 'unaryOp':
+            op = self.tokenizer.advance() # get the unary op
             self.compileTerm()
-            if token == '-':
+            if op == '-':
                 self.writeVm.writeArithmetic('neg')
             else:
                 self.writeVm.writeArithmetic('not')
-        
+
+        elif token_type == 'integerConstant':
+            int_token = self.tokenizer.advance()
+            self.writeVm.writePush('constant', int_token)
+
+        elif token_type == 'stringConstant':
+            str_token = self.tokenizer.advance()
+            self.writeVm.writePush('constant', len(str_token)) 
+            self.writeVm.writeCall('string.new', 1)   
+            for letter in str_token:
+                self.writer.writePush('constant', ord(letter))
+                self.writer.writeCall('String.appendChar', 2)
+
+        elif token in ['true', 'false', 'null', 'this']:
+            key_token = self.tokenizer.advance()
+            if key_token == 'this':
+                self.writeVm.writePush('pointer', 0)
+            else:
+                self.writeVm.writePush('constant', 0)
+                if key_token == "true":
+                    self.writeVm.writeArithmetic('not')
+
         elif token_type == 'identifier':
-            self._saveVarDetail(token)
+            ident_token = self.tokenizer.advance()
+
+            if self.tokenizer.peek() == '[':
+                self.tokenizer.advance() # consume '['
+                self.compileExpression()
+                self.tokenizer.advance() # consume ']'
+                self._handleArray(ident_token)
+
+            if self.tokenizer.peek() == '(':
+                self.tokenizer.advance() # consume '('
+                nVars = self.compileExpressionList()
+                self.tokenizer.advance() # consume ')'
+                self.writeVm.writeCall(ident_token, nVars)
+
+            if self.tokenizer.peek() == '.':
+                self.tokenizer.advance() # consume '.'
+                class_name = ident_token
+                subroutine_name = self.tokenizer.advance() # get subroutine name
+                self.tokenizer.advance() # consume '('
+                nVars = self.compileExpressionList()
+                self.tokenizer.advance() # consume ')'
+                self.writeVm.writeCall(f'{class_name}.{subroutine_name}',nVars)
+
+
+            
+
         
-        
-# let x = y + z
